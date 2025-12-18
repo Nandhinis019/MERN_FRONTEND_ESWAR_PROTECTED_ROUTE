@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, MapPin, ShoppingCart, User, Globe, Percent, LogIn, LogOut } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
 
 export default function Header({ cart, showDiscounts, setShowDiscounts }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('Select Location');
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
-  const { language, changeLanguage, t } = useLanguage();
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -50,16 +48,6 @@ export default function Header({ cart, showDiscounts, setShowDiscounts }) {
     navigate('/');
   };
 
-  const languages = [
-    { code: 'en', name: 'English' },
-    { code: 'hi', name: 'हिंदी' },
-    { code: 'ta', name: 'தமிழ்' }
-  ];
-
-  const handleLanguageChange = (langCode) => {
-    changeLanguage(langCode);
-  };
-
   return (
     <header className="w-full bg-gray-900 text-white">
       {/* Main Header */}
@@ -76,7 +64,7 @@ export default function Header({ cart, showDiscounts, setShowDiscounts }) {
           <div className="hidden md:flex items-center text-sm cursor-pointer hover:text-orange-300 transition-colors">
             <MapPin size={16} className="mr-1" />
             <div>
-              <div className="text-xs text-gray-300">{t('deliverTo')}</div>
+              <div className="text-xs text-gray-300">Deliver to</div>
               <div className="font-semibold">{location}</div>
             </div>
           </div>
@@ -88,7 +76,7 @@ export default function Header({ cart, showDiscounts, setShowDiscounts }) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('searchPlaceholder')}
+                placeholder="Search ZOVAi.in"
                 className="flex-1 px-4 py-2 text-black rounded-l-md focus:outline-none focus:ring-2 focus:ring-orange-400"
               />
               <button
@@ -102,25 +90,6 @@ export default function Header({ cart, showDiscounts, setShowDiscounts }) {
 
           {/* Right Side Icons */}
           <div className="flex items-center space-x-6">
-            {/* Language Selector */}
-            <div className="relative group">
-              <button className="flex items-center text-sm hover:text-orange-300 transition-colors">
-                <Globe size={16} className="mr-1" />
-                <span>{languages.find(l => l.code === language)?.name || 'EN'}</span>
-              </button>
-              <div className="absolute top-full right-0 mt-1 bg-white text-black rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                {languages.map(lang => (
-                  <button
-                    key={lang.code}
-                    onClick={() => handleLanguageChange(lang.code)}
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors"
-                  >
-                    {lang.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Discounts */}
             <button
               onClick={() => setShowDiscounts(!showDiscounts)}
@@ -132,44 +101,46 @@ export default function Header({ cart, showDiscounts, setShowDiscounts }) {
               <span>Offers</span>
             </button>
 
-            {/* Account */}
-            <div className="relative group">
-              <button className="flex items-center text-sm hover:text-orange-300 transition-colors">
-                <User size={16} className="mr-1" />
-                <div className="text-left">
-                  <div className="text-xs">{t('hello')}, {user?.name || t('signIn')}</div>
-                  <div className="font-semibold">{t('accountLists')}</div>
-                </div>
-              </button>
-              <div className="absolute top-full right-0 mt-1 bg-white text-black rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-48">
-                {user ? (
-                  <>
-                    <Link to="/profile" className="block px-4 py-2 hover:bg-gray-100 transition-colors">
-                      Your Profile
-                    </Link>
-                    <Link to="/orders" className="block px-4 py-2 hover:bg-gray-100 transition-colors">
-                      Your Orders
-                    </Link>
-                    <button
-                      onClick={logout}
-                      className="block w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors"
-                    >
-                      Sign Out
-                    </button>
-                  </>
-                ) : (
-                  <Link to="/login" className="block px-4 py-2 hover:bg-gray-100 transition-colors">
-                    <LogIn size={16} className="mr-2 inline" />
-                    Sign In
+            {/* Login/Logout */}
+            {user ? (
+              <div className="relative group">
+                <button className="flex items-center text-sm hover:text-orange-300 transition-colors">
+                  <User size={16} className="mr-1" />
+                  <div className="text-left">
+                    <div className="text-xs">Hello, {user.name}</div>
+                    <div className="font-semibold">Account & Lists</div>
+                  </div>
+                </button>
+                <div className="absolute top-full right-0 mt-1 bg-white text-black rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-48">
+                  <Link to="/profile" className="block px-4 py-2 hover:bg-gray-100 transition-colors">
+                    Your Profile
                   </Link>
-                )}
+                  <Link to="/orders" className="block px-4 py-2 hover:bg-gray-100 transition-colors">
+                    Your Orders
+                  </Link>
+                  <button
+                    onClick={logout}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors"
+                  >
+                    <LogOut size={16} className="mr-2 inline" />
+                    Sign Out
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <Link to="/login" className="flex items-center text-sm hover:text-orange-300 transition-colors">
+                <LogIn size={16} className="mr-1" />
+                <div className="text-left">
+                  <div className="text-xs">Hello, Sign in</div>
+                  <div className="font-semibold">Account & Lists</div>
+                </div>
+              </Link>
+            )}
 
             {/* Orders */}
             <Link to="/orders" className="text-sm hover:text-orange-300 transition-colors">
-              <div className="text-xs">{t('returns')}</div>
-              <div className="font-semibold">{t('orders')}</div>
+              <div className="text-xs">Returns</div>
+              <div className="font-semibold">& Orders</div>
             </Link>
 
             {/* Cart */}
@@ -180,7 +151,7 @@ export default function Header({ cart, showDiscounts, setShowDiscounts }) {
                   {cart.length}
                 </span>
               )}
-              <span className="ml-1 font-semibold">{t('cart')}</span>
+              <span className="ml-1 font-semibold">Cart</span>
             </Link>
           </div>
         </div>
@@ -191,13 +162,13 @@ export default function Header({ cart, showDiscounts, setShowDiscounts }) {
         <div className="max-w-screen-2xl mx-auto">
           <nav className="flex items-center space-x-8 text-sm">
             <Link to="/" className="hover:text-orange-300 transition-colors">Home</Link>
-            <Link to="/products" className="hover:text-orange-300 transition-colors">{t('all')}</Link>
-            <Link to="/category/electronics" className="hover:text-orange-300 transition-colors">{t('electronics')}</Link>
-            <Link to="/category/fashion" className="hover:text-orange-300 transition-colors">{t('fashion')}</Link>
-            <Link to="/category/home" className="hover:text-orange-300 transition-colors">{t('homeKitchen')}</Link>
-            <Link to="/category/books" className="hover:text-orange-300 transition-colors">{t('books')}</Link>
-            <Link to="/category/sports" className="hover:text-orange-300 transition-colors">{t('sports')}</Link>
-            <Link to="/addproduct" className="hover:text-orange-300 transition-colors">{t('sell')}</Link>
+            <Link to="/products" className="hover:text-orange-300 transition-colors">All Products</Link>
+            <Link to="/category/electronics" className="hover:text-orange-300 transition-colors">Electronics</Link>
+            <Link to="/category/fashion" className="hover:text-orange-300 transition-colors">Fashion</Link>
+            <Link to="/category/home" className="hover:text-orange-300 transition-colors">Home & Kitchen</Link>
+            <Link to="/category/books" className="hover:text-orange-300 transition-colors">Books</Link>
+            <Link to="/category/sports" className="hover:text-orange-300 transition-colors">Sports</Link>
+            <Link to="/addproduct" className="hover:text-orange-300 transition-colors">Sell</Link>
           </nav>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Truck, CheckCircle, XCircle, Clock, Eye } from 'lucide-react';
+import { Package, Truck, CheckCircle, XCircle, Clock, Eye, RotateCcw } from 'lucide-react';
 import { API } from '../utils/api';
 
 export default function Orders() {
@@ -8,46 +8,15 @@ export default function Orders() {
 
   useEffect(() => {
     const fetchOrders = () => {
-      const savedOrders = localStorage.getItem('orders');
-      if (savedOrders) {
-        setOrders(JSON.parse(savedOrders));
-      } else {
-        const sampleOrders = [
-          {
-            id: 'ORD001',
-            date: '2024-01-15',
-            status: 'delivered',
-            total: 2499,
-            items: [
-              {
-                id: 1,
-                name: 'Wireless Bluetooth Headphones',
-                price: 2499,
-                quantity: 1,
-                image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300'
-              }
-            ],
-            deliveryAddress: '123 Main St, Mumbai, Maharashtra 400001'
-          },
-          {
-            id: 'ORD002',
-            date: '2024-01-20',
-            status: 'shipped',
-            total: 1299,
-            items: [
-              {
-                id: 2,
-                name: 'Smartphone Case',
-                price: 1299,
-                quantity: 1,
-                image: 'https://images.unsplash.com/photo-1556656793-08538906a9f8?w=300'
-              }
-            ],
-            deliveryAddress: '123 Main St, Mumbai, Maharashtra 400001'
-          }
-        ];
-        setOrders(sampleOrders);
-        localStorage.setItem('orders', JSON.stringify(sampleOrders));
+      setLoading(true);
+      try {
+        // Get orders from localStorage (in real app, this would be from API)
+        const savedOrders = localStorage.getItem('orders');
+        if (savedOrders) {
+          setOrders(JSON.parse(savedOrders));
+        }
+      } catch (error) {
+        console.error('Error fetching orders:', error);
       }
       setLoading(false);
     };
@@ -57,6 +26,7 @@ export default function Orders() {
 
   const getStatusIcon = (status) => {
     switch (status) {
+      case 'confirmed':
       case 'processing':
         return <Clock className="text-yellow-500" size={20} />;
       case 'shipped':
@@ -72,6 +42,7 @@ export default function Orders() {
 
   const getStatusColor = (status) => {
     switch (status) {
+      case 'confirmed':
       case 'processing':
         return 'text-yellow-600 bg-yellow-100';
       case 'shipped':
@@ -85,31 +56,28 @@ export default function Orders() {
     }
   };
 
+  const canCancelOrder = (status) => {
+    return status === 'confirmed' || status === 'processing';
+  };
+
   const cancelOrder = async (orderId) => {
     try {
-      const response = await fetch(`${API}/api/orders/${orderId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: 'cancelled' }),
-      });
-
-      if (response.ok) {
-        const updatedOrders = orders.map(order =>
-          order.id === orderId ? { ...order, status: 'cancelled' } : order
-        );
-        setOrders(updatedOrders);
-      } else {
-        console.error('Failed to cancel order');
-      }
+      const updatedOrders = orders.map(order =>
+        order.orderId === orderId ? { ...order, status: 'cancelled' } : order
+      );
+      setOrders(updatedOrders);
+      localStorage.setItem('orders', JSON.stringify(updatedOrders));
     } catch (error) {
       console.error('Error cancelling order:', error);
     }
   };
 
-  const canCancelOrder = (status) => {
-    return status === 'processing' || status === 'shipped';
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
   if (loading) {
@@ -136,13 +104,13 @@ export default function Orders() {
       ) : (
         <div className="space-y-6">
           {orders.map((order) => (
-            <div key={order.id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            <div key={order.orderId} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
               <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                   <div className="flex items-center space-x-4 mb-2 md:mb-0">
                     <div>
-                      <h3 className="font-semibold text-gray-900">Order #{order.id}</h3>
-                      <p className="text-sm text-gray-600">Placed on {new Date(order.date).toLocaleDateString()}</p>
+                      <h3 className="font-semibold text-gray-900">Order #{order.orderId}</h3>
+                      <p className="text-sm text-gray-600">Placed on {formatDate(order.orderDate)}</p>
                     </div>
                     <div className="flex items-center space-x-2">
                       {getStatusIcon(order.status)}
@@ -152,34 +120,37 @@ export default function Orders() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-lg">₹{order.total}</p>
-                    <p className="text-sm text-gray-600">{order.items.length} item(s)</p>
+                    <p className="font-semibold text-lg">₹{order.totalAmount}</p>
+                    <p className="text-sm text-gray-600">Qty: {order.quantity}</p>
                   </div>
                 </div>
               </div>
 
               <div className="p-6">
-                <div className="space-y-4">
-                  {order.items.map((item) => (
-                    <div key={item.id} className="flex items-center space-x-4">
-                      <img 
-                        src={item.image} 
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded-md border"
-                      />
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{item.name}</h4>
-                        <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                        <p className="text-sm font-semibold text-gray-900">₹{item.price}</p>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center space-x-4 mb-4">
+                  <img 
+                    src={order.productImage} 
+                    alt={order.productName}
+                    className="w-20 h-20 object-cover rounded-md border"
+                  />
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900 mb-1">{order.productName}</h4>
+                    <p className="text-sm text-gray-600">Quantity: {order.quantity}</p>
+                    <p className="text-sm font-semibold text-gray-900">₹{order.price} each</p>
+                  </div>
                 </div>
 
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Delivery Address</h4>
-                  <p className="text-sm text-gray-600">{order.deliveryAddress}</p>
-                </div>
+                {order.customerInfo && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">Delivery Address</h4>
+                    <div className="text-sm text-gray-600">
+                      <p className="font-medium">{order.customerInfo.name}</p>
+                      <p>{order.customerInfo.address}</p>
+                      <p>{order.customerInfo.city}, {order.customerInfo.state} - {order.customerInfo.pincode}</p>
+                      <p>Phone: {order.customerInfo.phone}</p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-6 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                   <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
@@ -190,6 +161,7 @@ export default function Orders() {
                   {order.status === 'delivered' && (
                     <>
                       <button className="flex items-center justify-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors">
+                        <RotateCcw size={16} className="mr-2" />
                         Buy Again
                       </button>
                       <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
@@ -200,13 +172,58 @@ export default function Orders() {
                   
                   {canCancelOrder(order.status) && (
                     <button 
-                      onClick={() => cancelOrder(order.id)}
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to cancel this order?')) {
+                          cancelOrder(order.orderId);
+                        }
+                      }}
                       className="flex items-center justify-center px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                     >
                       <XCircle size={16} className="mr-2" />
                       Cancel Order
                     </button>
                   )}
+                </div>
+
+                {/* Order Status Timeline */}
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h4 className="font-medium text-gray-900 mb-4">Order Status</h4>
+                  <div className="flex items-center space-x-4">
+                    <div className={`flex items-center space-x-2 ${
+                      ['confirmed', 'processing', 'shipped', 'delivered'].includes(order.status) ? 'text-green-600' : 'text-gray-400'
+                    }`}>
+                      <div className={`w-3 h-3 rounded-full ${
+                        ['confirmed', 'processing', 'shipped', 'delivered'].includes(order.status) ? 'bg-green-600' : 'bg-gray-400'
+                      }`}></div>
+                      <span className="text-sm">Order Confirmed</span>
+                    </div>
+                    
+                    <div className={`w-8 h-0.5 ${
+                      ['shipped', 'delivered'].includes(order.status) ? 'bg-green-600' : 'bg-gray-300'
+                    }`}></div>
+                    
+                    <div className={`flex items-center space-x-2 ${
+                      ['shipped', 'delivered'].includes(order.status) ? 'text-green-600' : 'text-gray-400'
+                    }`}>
+                      <div className={`w-3 h-3 rounded-full ${
+                        ['shipped', 'delivered'].includes(order.status) ? 'bg-green-600' : 'bg-gray-400'
+                      }`}></div>
+                      <span className="text-sm">Shipped</span>
+                    </div>
+                    
+                    <div className={`w-8 h-0.5 ${
+                      order.status === 'delivered' ? 'bg-green-600' : 'bg-gray-300'
+                    }`}></div>
+                    
+                    <div className={`flex items-center space-x-2 ${
+                      order.status === 'delivered' ? 'text-green-600' : 'text-gray-400'
+                    }`}>
+                      <div className={`w-3 h-3 rounded-full ${
+                        order.status === 'delivered' ? 'bg-green-600' : 'bg-gray-400'
+                      }`}></div>
+                      <span className="text-sm">Delivered</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useSearchParams, useParams } from "react-router-dom";
 import { Star, ShoppingCart, Trash2, Eye } from "lucide-react";
 import { categoryProducts } from '../data/categoryProducts';
-import { useLanguage } from '../context/LanguageContext';
+
 import { API } from '../utils/api';
 
 export default function Products({ setCart, cart, showDiscounts }) {
@@ -11,7 +11,7 @@ export default function Products({ setCart, cart, showDiscounts }) {
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const { category } = useParams();
-  const { t } = useLanguage();
+
   const searchQuery = searchParams.get('search');
   const discountsParam = searchParams.get('discounts');
 
@@ -112,19 +112,19 @@ export default function Products({ setCart, cart, showDiscounts }) {
     <div className="max-w-screen-2xl mx-auto px-4 py-6">
       {/* Banner */}
       <div className="bg-gradient-to-r from-orange-400 to-red-500 text-white p-6 rounded-lg mb-6">
-        <h2 className="text-2xl font-bold mb-2">🎉 {t('festivalSale')}</h2>
-        <p className="text-lg">{t('saleDescription')}</p>
+        <h2 className="text-2xl font-bold mb-2">🎉 Great Indian Festival Sale!</h2>
+        <p className="text-lg">Up to 80% off on Electronics, Fashion & More!</p>
       </div>
 
       {/* Results Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-2">
-          {searchQuery ? `${t('searchResults')} "${searchQuery}"` : 
-           showDiscounts ? t('discountedProducts') : 
-           category === 'electronics' ? t('electronics') :
-           category === 'fashion' ? t('fashion') : t('allProducts')}
+          {searchQuery ? `Search results for "${searchQuery}"` : 
+           showDiscounts ? 'Discounted Products' : 
+           category === 'electronics' ? 'Electronics' :
+           category === 'fashion' ? 'Fashion' : 'All Products'}
         </h2>
-        <p className="text-gray-600">{filteredProducts.length} {t('results')}</p>
+        <p className="text-gray-600">{filteredProducts.length} results</p>
         
         {/* Discount Toggle */}
         <div className="mt-4">
@@ -168,14 +168,7 @@ export default function Products({ setCart, cart, showDiscounts }) {
               <div className="space-y-2">
                 <h3 className="font-semibold text-gray-800 line-clamp-2 hover:text-orange-600 transition-colors">
                   <Link to={`/product/${product._id}`}>
-                    {product._id === 'elec_001' ? t('iPhone17Pro') :
-                     product._id === 'elec_002' ? t('amazonEcho') :
-                     product._id === 'elec_003' ? t('sonyCamera') :
-                     product._id === 'elec_004' ? t('eilikRobot') :
-                     product._id === 'fash_001' ? t('mensNecklace') :
-                     product._id === 'fash_002' ? t('womensDress') :
-                     product._id === 'fash_003' ? t('womensTop') :
-                     product.name}
+                    {product.name}
                   </Link>
                 </h3>
 
@@ -200,14 +193,14 @@ export default function Products({ setCart, cart, showDiscounts }) {
                     className="flex-1 bg-orange-400 hover:bg-orange-500 text-white py-2 px-3 rounded text-sm font-medium transition-colors flex items-center justify-center"
                   >
                     <Eye size={16} className="mr-1" />
-                    {t('view')}
+                    View
                   </Link>
                   <button 
                     onClick={() => addToCart(product)}
                     className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-gray-900 py-2 px-3 rounded text-sm font-medium transition-colors flex items-center justify-center"
                   >
                     <ShoppingCart size={16} className="mr-1" />
-                    {t('addToCart')}
+                    Add to Cart
                   </button>
                 </div>
 

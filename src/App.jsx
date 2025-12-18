@@ -1,17 +1,18 @@
 import { Route, Routes } from "react-router-dom";
 import Products from "./components/Products";
 import Product from "./components/Product";
-import TestHomepage from "./components/TestHomepage";
+import Homepage from "./components/Homepage";
 import { useEffect, useState } from "react";
 import Cart from "./components/Cart";
 import BuyNow from "./components/BuyNow";
 import Login from "./components/Login";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import Addproducts from "./components/Addproducts";
-import SimpleHeader from "./components/SimpleHeader";
-import SimpleFooter from "./components/SimpleFooter";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
 import Profile from "./components/Profile";
 import Orders from "./components/Orders";
+import AIAssistant from "./components/AIAssistant";
 
 
 function App() {
@@ -33,11 +34,15 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <SimpleHeader cart={cart} />
+      <Header 
+        cart={cart} 
+        showDiscounts={showDiscounts}
+        setShowDiscounts={setShowDiscounts}
+      />
       
       <main className="flex-1">
         <Routes>
-          <Route path="/" element={<TestHomepage />} />
+          <Route path="/" element={<Homepage />} />
           <Route 
             path="/products" 
             element={
@@ -99,7 +104,8 @@ function App() {
         </Routes>
       </main>
       
-      <SimpleFooter />
+      <Footer />
+      <AIAssistant />
     </div>
   )
 }

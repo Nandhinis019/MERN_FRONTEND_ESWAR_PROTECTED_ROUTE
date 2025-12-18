@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RotateCcw } from "lucide-react";
 import { categoryProducts } from '../data/categoryProducts';
 import { API } from '../utils/api';
-import { useLanguage } from '../context/LanguageContext';
+
 
 export default function Product({ cart, setCart }) {
   const { id } = useParams();
@@ -12,7 +12,14 @@ export default function Product({ cart, setCart }) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [reviews, setReviews] = useState([]);
-  const { t } = useLanguage();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -43,10 +50,21 @@ export default function Product({ cart, setCart }) {
   }, [id]);
 
   const addToCart = () => {
+    const updatedCart = [...cart];
     for (let i = 0; i < quantity; i++) {
-      setCart([...cart, product]);
+      updatedCart.push(product);
     }
+    setCart(updatedCart);
     alert(`Added ${quantity} item(s) to cart!`);
+  };
+
+  const handleBuyNow = () => {
+    if (!user) {
+      alert('Please login to place an order');
+      return;
+    }
+    // Navigate to buy now page
+    window.location.href = `/buynow/${product._id}`;
   };
 
   const renderStars = (rating) => {
@@ -181,12 +199,12 @@ export default function Product({ cart, setCart }) {
                 Add to Cart
               </button>
               
-              <Link 
-                to={`/buynow/${product._id}`}
+              <button 
+                onClick={handleBuyNow}
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center"
               >
                 Buy Now
-              </Link>
+              </button>
             </div>
 
             <div className="flex space-x-4 mt-4">

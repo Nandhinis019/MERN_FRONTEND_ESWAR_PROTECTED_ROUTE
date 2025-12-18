@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Star, Truck, Shield, RotateCcw, Percent } from 'lucide-react';
 
 export default function Homepage() {
-
   const featuredCategories = [
     {
       name: 'Electronics',
@@ -68,7 +67,7 @@ export default function Homepage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to="/?discounts=true"
+                to="/products?discounts=true"
                 className="bg-white text-orange-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
               >
                 <Percent size={20} className="mr-2" />
