@@ -168,7 +168,7 @@ export default function Header({ cart, showDiscounts, setShowDiscounts }) {
             <Link to="/category/home" className="hover:text-orange-300 transition-colors">Home & Kitchen</Link>
             <Link to="/category/books" className="hover:text-orange-300 transition-colors">Books</Link>
             <Link to="/category/sports" className="hover:text-orange-300 transition-colors">Sports</Link>
-            <Link to="/addproduct" className="hover:text-orange-300 transition-colors">Sell</Link>
+            <Link to="/addproduct" className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded transition-colors font-medium">+ Add Product</Link>
           </nav>
         </div>
       </div>

@@ -1,55 +1,74 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Package, Upload, DollarSign, FileText, Image as ImageIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Package, DollarSign, Image, FileText, Tag, Percent, Box } from 'lucide-react';
 
-export default function AddProducts() {
+export default function Addproducts() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
+    originalPrice: '',
+    discount: '',
     image: '',
-    category: '',
-    stock: ''
+    category: 'electronics',
+    inStock: '',
+    rating: 4,
+    reviewCount: 0
   });
-  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categories = [
-    'Electronics',
-    'Fashion',
-    'Home & Kitchen',
-    'Books',
-    'Sports',
-    'Beauty',
-    'Toys',
-    'Automotive'
+    { value: 'electronics', label: 'Electronics' },
+    { value: 'fashion', label: 'Fashion' },
+    { value: 'home', label: 'Home & Kitchen' },
+    { value: 'books', label: 'Books' },
+    { value: 'sports', label: 'Sports' }
   ];
 
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
+    setFormData({
+      ...formData,
       [name]: value
-    }));
+    });
+    
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
+      setErrors({
+        ...errors,
         [name]: ''
-      }));
+      });
+    }
+
+    // Auto-calculate discount if price and originalPrice are provided
+    if (name === 'price' || name === 'originalPrice') {
+      const price = name === 'price' ? parseFloat(value) : parseFloat(formData.price);
+      const originalPrice = name === 'originalPrice' ? parseFloat(value) : parseFloat(formData.originalPrice);
+      
+      if (price && originalPrice && originalPrice > price) {
+        const discount = Math.round(((originalPrice - price) / originalPrice) * 100);
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          discount: discount.toString()
+        }));
+      }
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.name.trim()) newErrors.name = 'Product name is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (!formData.price || formData.price <= 0) newErrors.price = 'Valid price is required';
+    if (!formData.price) newErrors.price = 'Price is required';
+    else if (parseFloat(formData.price) <= 0) newErrors.price = 'Price must be greater than 0';
     if (!formData.image.trim()) newErrors.image = 'Image URL is required';
-    if (!formData.category) newErrors.category = 'Category is required';
-    if (!formData.stock || formData.stock < 0) newErrors.stock = 'Valid stock quantity is required';
-    
+    if (!formData.inStock) newErrors.inStock = 'Stock quantity is required';
+    else if (parseInt(formData.inStock) < 0) newErrors.inStock = 'Stock cannot be negative';
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -57,188 +76,231 @@ export default function AddProducts() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
-    
-    setLoading(true);
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      const res = await fetch("http://localhost:5000/api/postProduct", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          price: Number(formData.price),
-          image: formData.image,
-          category: formData.category,
-          stock: Number(formData.stock)
-        })
-      });
+      // Create product object
+      const newProduct = {
+        _id: `${formData.category.substring(0, 4)}_${Date.now()}`,
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : parseFloat(formData.price),
+        discount: formData.discount ? parseInt(formData.discount) : 0,
+        image: formData.image,
+        category: formData.category,
+        inStock: parseInt(formData.inStock),
+        rating: parseInt(formData.rating),
+        reviewCount: parseInt(formData.reviewCount)
+      };
+
+      // Get existing products from localStorage
+      const existingProducts = JSON.parse(localStorage.getItem('customProducts') || '[]');
+      existingProducts.push(newProduct);
+      localStorage.setItem('customProducts', JSON.stringify(existingProducts));
+
+      alert('Product added successfully!');
       
-      if (res.ok) {
-        alert("Product Added Successfully!");
-        // Reset form
-        setFormData({
-          name: '',
-          description: '',
-          price: '',
-          image: '',
-          category: '',
-          stock: ''
-        });
-      } else {
-        throw new Error('Failed to add product');
-      }
+      // Reset form
+      setFormData({
+        name: '',
+        description: '',
+        price: '',
+        originalPrice: '',
+        discount: '',
+        image: '',
+        category: 'electronics',
+        inStock: '',
+        rating: 4,
+        reviewCount: 0
+      });
+
+      // Navigate to products page
+      setTimeout(() => {
+        navigate('/products');
+      }, 1000);
+
     } catch (error) {
-      console.log(error);
-      alert("Server error. Please try again.");
+      console.error('Error adding product:', error);
+      alert('Failed to add product. Please try again.');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex items-center mb-8">
-        <Link to="/" className="text-orange-600 hover:text-orange-700 mr-4">
-          <ArrowLeft size={24} />
-        </Link>
-        <div className="flex items-center">
-          <Package className="text-orange-500 mr-3" size={32} />
-          <h1 className="text-3xl font-bold text-gray-900">Add New Product</h1>
-        </div>
-      </div>
-
-      {/* Form */}
       <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Add New Product</h1>
+          <p className="text-gray-600">Fill in the details to add a new product to your store</p>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Product Name */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <FileText size={16} className="mr-2" />
-                Product Name *
-              </label>
-              <input
-                type="text"
-                name="name"
-                placeholder="Enter product name"
-                value={formData.name}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 transition-colors ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-            </div>
-
-            {/* Category */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <Package size={16} className="mr-2" />
-                Category *
-              </label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 transition-colors ${
-                  errors.category ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Select a category</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-              {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
-            </div>
-
-            {/* Price */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <DollarSign size={16} className="mr-2" />
-                Price (₹) *
-              </label>
-              <input
-                type="number"
-                name="price"
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-                value={formData.price}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 transition-colors ${
-                  errors.price ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
-            </div>
-
-            {/* Stock */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <Package size={16} className="mr-2" />
-                Stock Quantity *
-              </label>
-              <input
-                type="number"
-                name="stock"
-                placeholder="0"
-                min="0"
-                value={formData.stock}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 transition-colors ${
-                  errors.stock ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.stock && <p className="text-red-500 text-sm mt-1">{errors.stock}</p>}
-            </div>
+          {/* Product Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Package size={16} className="inline mr-1" />
+              Product Name *
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 ${
+                errors.name ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Enter product name"
+            />
+            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
           </div>
 
           {/* Description */}
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-              <FileText size={16} className="mr-2" />
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <FileText size={16} className="inline mr-1" />
               Description *
             </label>
             <textarea
               name="description"
-              placeholder="Enter detailed product description"
-              rows={4}
               value={formData.description}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 transition-colors resize-none ${
+              onChange={handleInputChange}
+              rows={4}
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 ${
                 errors.description ? 'border-red-500' : 'border-gray-300'
               }`}
+              placeholder="Enter product description"
             />
             {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
           </div>
 
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Tag size={16} className="inline mr-1" />
+              Category *
+            </label>
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+            >
+              {categories.map(cat => (
+                <option key={cat.value} value={cat.value}>{cat.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Price and Original Price */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <DollarSign size={16} className="inline mr-1" />
+                Selling Price (₹) *
+              </label>
+              <input
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 ${
+                  errors.price ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter selling price"
+                min="0"
+                step="0.01"
+              />
+              {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <DollarSign size={16} className="inline mr-1" />
+                Original Price (₹)
+              </label>
+              <input
+                type="number"
+                name="originalPrice"
+                value={formData.originalPrice}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                placeholder="Enter original price (optional)"
+                min="0"
+                step="0.01"
+              />
+              <p className="text-xs text-gray-500 mt-1">For showing discount</p>
+            </div>
+          </div>
+
+          {/* Discount and Stock */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Percent size={16} className="inline mr-1" />
+                Discount (%)
+              </label>
+              <input
+                type="number"
+                name="discount"
+                value={formData.discount}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                placeholder="Auto-calculated or enter manually"
+                min="0"
+                max="100"
+              />
+              <p className="text-xs text-gray-500 mt-1">Auto-calculated from prices</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Box size={16} className="inline mr-1" />
+                Stock Quantity *
+              </label>
+              <input
+                type="number"
+                name="inStock"
+                value={formData.inStock}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 ${
+                  errors.inStock ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter stock quantity"
+                min="0"
+              />
+              {errors.inStock && <p className="text-red-500 text-sm mt-1">{errors.inStock}</p>}
+            </div>
+          </div>
+
           {/* Image URL */}
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-              <ImageIcon size={16} className="mr-2" />
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Image size={16} className="inline mr-1" />
               Image URL *
             </label>
             <input
               type="url"
               name="image"
-              placeholder="https://example.com/image.jpg"
               value={formData.image}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 transition-colors ${
+              onChange={handleInputChange}
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 ${
                 errors.image ? 'border-red-500' : 'border-gray-300'
               }`}
+              placeholder="https://example.com/image.jpg"
             />
             {errors.image && <p className="text-red-500 text-sm mt-1">{errors.image}</p>}
+            <p className="text-xs text-gray-500 mt-1">Use Unsplash or any image hosting service</p>
             
             {/* Image Preview */}
             {formData.image && (
-              <div className="mt-3">
-                <p className="text-sm text-gray-600 mb-2">Image Preview:</p>
+              <div className="mt-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">Image Preview:</p>
                 <img 
                   src={formData.image} 
                   alt="Preview" 
@@ -251,29 +313,55 @@ export default function AddProducts() {
             )}
           </div>
 
-          {/* Submit Button */}
+          {/* Rating */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Initial Rating (1-5)
+            </label>
+            <select
+              name="rating"
+              value={formData.rating}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+            >
+              <option value="1">1 Star</option>
+              <option value="2">2 Stars</option>
+              <option value="3">3 Stars</option>
+              <option value="4">4 Stars</option>
+              <option value="5">5 Stars</option>
+            </select>
+          </div>
+
+          {/* Submit Buttons */}
           <div className="flex space-x-4 pt-6">
             <button
               type="submit"
-              disabled={loading}
-              className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center"
+              disabled={isSubmitting}
+              className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
             >
-              {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-              ) : (
-                <Upload size={20} className="mr-2" />
-              )}
-              {loading ? 'Adding Product...' : 'Add Product'}
+              {isSubmitting ? 'Adding Product...' : 'Add Product'}
             </button>
-            
-            <Link
-              to="/"
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+            <button
+              type="button"
+              onClick={() => navigate('/products')}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-semibold transition-colors"
             >
               Cancel
-            </Link>
+            </button>
           </div>
         </form>
+
+        {/* Helper Text */}
+        <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+          <h3 className="font-semibold text-blue-900 mb-2">💡 Tips for Adding Products:</h3>
+          <ul className="text-sm text-blue-800 space-y-1">
+            <li>• Use high-quality images (recommended: 400x400px or larger)</li>
+            <li>• Write clear, detailed descriptions</li>
+            <li>• Set competitive prices</li>
+            <li>• Keep stock quantities updated</li>
+            <li>• Use Unsplash.com for free product images</li>
+          </ul>
+        </div>
       </div>
     </div>
   );

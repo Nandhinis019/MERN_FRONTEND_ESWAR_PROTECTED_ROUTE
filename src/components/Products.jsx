@@ -36,7 +36,12 @@ export default function Products({ setCart, cart, showDiscounts }) {
         console.log('Using static data - Backend not available');
         // Use static data as fallback
         const allProducts = [...categoryProducts.electronics, ...categoryProducts.fashion];
-        setProducts(allProducts);
+        
+        // Add custom products from localStorage
+        const customProducts = JSON.parse(localStorage.getItem('customProducts') || '[]');
+        const combinedProducts = [...allProducts, ...customProducts];
+        
+        setProducts(combinedProducts);
       }
       setLoading(false);
     };
@@ -78,16 +83,30 @@ export default function Products({ setCart, cart, showDiscounts }) {
 
   // ✅ Delete product
   const deleteProduct = async (id) => {
-    const res = await fetch(
-      `http://localhost:5000/api/deleteProduct/${id}`,
-      {
-        method: "DELETE",
-      }
-    );
+    try {
+      // Try to delete from API first
+      const res = await fetch(
+        `${API}/api/deleteProduct/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
-    if (res.status === 204 || res.ok) {
-      setProducts(products.filter((p) => p._id !== id));
+      if (res.status === 204 || res.ok) {
+        setProducts(products.filter((p) => p._id !== id));
+        return;
+      }
+    } catch (error) {
+      console.log('API not available, deleting from localStorage');
     }
+
+    // Delete from localStorage (custom products)
+    const customProducts = JSON.parse(localStorage.getItem('customProducts') || '[]');
+    const updatedCustomProducts = customProducts.filter(p => p._id !== id);
+    localStorage.setItem('customProducts', JSON.stringify(updatedCustomProducts));
+    
+    // Update local state
+    setProducts(products.filter((p) => p._id !== id));
   };
 
   const renderStars = (rating) => {
